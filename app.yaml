@@ -1,0 +1,15 @@
+runtime: python37
+
+handlers:
+- url: /newasset/.*
+  script: auto
+  secure: always
+  login: admin
+
+- url: /scantag/.*
+  script: auto
+  secure: always
+
+- url: /.*
+  script: auto
+  secure: always
