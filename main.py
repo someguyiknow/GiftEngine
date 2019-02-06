@@ -80,7 +80,7 @@ def finish(auuid):
   subject = 'Acquisition Complete ({})'.format(entity['path'].split("/")[3])
   content = mail.Content("text/plain", entity['path'])
   msg = mail.Mail(SENDER, subject, RECIPIENT, content)
-  response = sg.client.mail.send.post(request_body=msg.get())
+  response = SG_CLIENT.client.mail.send.post(request_body=msg.get())
 
   return response.status_code
 
