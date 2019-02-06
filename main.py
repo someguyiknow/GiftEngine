@@ -68,7 +68,7 @@ def finish(auuid):
   for blob in blobs:
     src_bucket.copy_blob(blob,dst_bucket)
 
-  src_bucket.delete()
+  src_bucket.delete(force=true)
   DS_CLIENT.delete(key)
   return 'ok'
 
