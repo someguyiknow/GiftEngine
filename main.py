@@ -78,9 +78,9 @@ def finish(auuid):
   DS_CLIENT.delete(key)
   
   subject = 'Acquisition Complete ({})'.format(entity['path'].split("/")[3])
-  content = Content("text/plain", entity['path'])
-  mail = Mail(SENDER, subject, RECIPIENT, content)
-  response = sg.client.mail.send.post(request_body=mail.get())
+  content = mail.Content("text/plain", entity['path'])
+  msg = mail.Mail(SENDER, subject, RECIPIENT, content)
+  response = sg.client.mail.send.post(request_body=msg.get())
 
   return response.status_code
 
