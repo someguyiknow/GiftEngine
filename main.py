@@ -82,7 +82,7 @@ def finish(auuid):
   msg = mail.Mail(SENDER, subject, RECIPIENT, content)
   response = SG_CLIENT.client.mail.send.post(request_body=msg.get())
 
-  return ok
+  return 'ok'
 
 
 if __name__ == '__main__':
