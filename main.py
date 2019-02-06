@@ -5,7 +5,7 @@ import uuid
 
 from flask import Flask,redirect,send_file
 from google.cloud import datastore,exceptions,storage
-
+import sendgrid
 
 app = Flask(__name__)
 
@@ -17,6 +17,10 @@ config = DS_CLIENT.get(key)
 PROJECT_NAME = config['project']
 BUCKET_NAME = config['bucket']
 APP_URL = config['url']
+
+SG_CLIENT = sendgrid.SendGridAPIClient(apikey=config['sendgrid_api'])
+SENDER = Email(config['sender'])
+RECIPIENT = Email(config['recipient'])
 
 
 @app.route('/')
@@ -70,7 +74,13 @@ def finish(auuid):
 
   src_bucket.delete(force=true)
   DS_CLIENT.delete(key)
-  return 'ok'
+  
+  subject = 'Acquisition Complete ({})'.format(entity['path'].split("/")[3])
+  content = Content("text/plain", entity['path'])
+  mail = Mail(SENDER, subject, RECIPIENT, content)
+  response = sg.client.mail.send.post(request_body=mail.get())
+
+  return response.status_code
 
 
 if __name__ == '__main__':
