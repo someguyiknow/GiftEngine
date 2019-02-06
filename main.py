@@ -79,7 +79,7 @@ def finish(auuid):
   DS_CLIENT.delete(key)
   
   subject = 'Acquisition Complete ({})'.format(asset)
-  content = mail.Content('text/plain', 'Image acqusition complete: gs://{}/{}'.format(BUCKET_NAME, asset)
+  content = mail.Content('text/plain', 'Image acqusition complete: gs://{}/{}'.format(BUCKET_NAME, asset))
   msg = mail.Mail(SENDER, subject, RECIPIENT, content)
   response = SG_CLIENT.client.mail.send.post(request_body=msg.get())
 
