@@ -6,6 +6,8 @@ import uuid
 from flask import Flask,redirect,send_file
 from google.cloud import datastore,exceptions,storage
 import sendgrid
+from sendgrid.helpers import mail
+
 
 app = Flask(__name__)
 
@@ -19,8 +21,8 @@ BUCKET_NAME = config['bucket']
 APP_URL = config['url']
 
 SG_CLIENT = sendgrid.SendGridAPIClient(apikey=config['sendgrid_api'])
-SENDER = Email(config['sender'])
-RECIPIENT = Email(config['recipient'])
+SENDER = mail.Email(config['sender'])
+RECIPIENT = mail.Email(config['recipient'])
 
 
 @app.route('/')
