@@ -65,7 +65,8 @@ def getPath(auuid):
 def finish(auuid):
   key = DS_CLIENT.key('sessions', auuid)
   entity = DS_CLIENT.get(key)
-  src_bucket_name = entity['path'].split("/")[2]
+  src_bucket_name = entity['path'].split('/')[2]
+  asset = entity['path'].split('/')[3]
 
   src_bucket = GCS_CLIENT.get_bucket(src_bucket_name)
   dst_bucket = GCS_CLIENT.get_bucket(BUCKET_NAME)
@@ -77,8 +78,8 @@ def finish(auuid):
   src_bucket.delete(force=True)
   DS_CLIENT.delete(key)
   
-  subject = 'Acquisition Complete ({})'.format(entity['path'].split("/")[3])
-  content = mail.Content("text/plain", entity['path'])
+  subject = 'Acquisition Complete ({})'.format(asset)
+  content = mail.Content('text/plain', 'Image acqusition complete: gs://{}/{}'.format(BUCKET_NAME, asset)
   msg = mail.Mail(SENDER, subject, RECIPIENT, content)
   response = SG_CLIENT.client.mail.send.post(request_body=msg.get())
 
