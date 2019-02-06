@@ -53,6 +53,12 @@ def newAsset(auuid, tag):
   entity = datastore.Entity(key=key)
   entity['path'] = 'gs://{}/{}'.format(bucket.name, tag)
   DS_CLIENT.put(entity)
+  
+  subject = 'Acquisition Underway ({})'.format(tag)
+  content = mail.Content('text/plain', 'Image acquisition for {} has begun.'.format(tag))
+  msg = mail.Mail(SENDER, subject, RECIPIENT, content)
+  response = SG_CLIENT.client.mail.send.post(request_body=msg.get())
+  
   return 'ok'
 
 @app.route('/path/<auuid>')
@@ -79,9 +85,9 @@ def finish(auuid):
   DS_CLIENT.delete(key)
   
   subject = 'Acquisition Complete ({})'.format(asset)
-  content = mail.Content('text/plain', 'Image acqusition complete: gs://{}/{}'.format(BUCKET_NAME, asset))
+  content = mail.Content('text/plain', 'Image acquisition complete: gs://{}/{}'.format(BUCKET_NAME, asset))
   msg = mail.Mail(SENDER, subject, RECIPIENT, content)
-  response = SG_CLIENT.client.mail.send.post(request_body=msg.get())
+  SG_CLIENT.client.mail.send.post(request_body=msg.get())
 
   return 'ok'
 
