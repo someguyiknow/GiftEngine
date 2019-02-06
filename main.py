@@ -74,7 +74,7 @@ def finish(auuid):
   for blob in blobs:
     src_bucket.copy_blob(blob,dst_bucket)
 
-  src_bucket.delete(force=true)
+  src_bucket.delete(force=True)
   DS_CLIENT.delete(key)
   
   subject = 'Acquisition Complete ({})'.format(entity['path'].split("/")[3])
