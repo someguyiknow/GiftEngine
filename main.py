@@ -79,7 +79,8 @@ def finish(auuid):
   blobs = src_bucket.list_blobs()
 
   for blob in blobs:
-    src_bucket.copy_blob(blob,dst_bucket)
+    new_blob = storage.Blob(blob.name, dst_bucket)
+    new_blob.rewrite(blob)
 
   src_bucket.delete(force=True)
   DS_CLIENT.delete(key)
