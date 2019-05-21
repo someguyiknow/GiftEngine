@@ -80,7 +80,12 @@ def finish(auuid):
 
   for blob in blobs:
     new_blob = storage.Blob(blob.name, dst_bucket)
-    new_blob.rewrite(blob)
+
+    token = None
+    while True:
+      token, _, _ = new_blob.rewrite(blob, token=token)
+      if token is None:
+        break
 
   src_bucket.delete(force=True)
   DS_CLIENT.delete(key)
