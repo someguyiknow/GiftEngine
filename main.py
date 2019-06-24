@@ -3,7 +3,7 @@ import io
 import json
 import uuid
 
-from flask import Flask,redirect,send_file
+from flask import Flask,redirect
 from google.cloud import datastore,exceptions,storage
 import sendgrid
 from sendgrid.helpers import mail
@@ -20,83 +20,57 @@ PROJECT_NAME = config['project']
 BUCKET_NAME = config['bucket']
 APP_URL = config['url']
 
-SG_CLIENT = sendgrid.SendGridAPIClient(apikey=config['sendgrid_api'])
-SENDER = mail.Email(config['sender'])
-RECIPIENT = mail.Email(config['recipient'])
+SG_CLIENT = sendgrid.SendGridAPIClient(config['sendgrid_api'])
+SENDER = config['sender']
+RECIPIENT = config['recipient']
 
 
 @app.route('/')
 def start():
   return str(uuid.uuid4())
 
+
 @app.route('/scantag/<auuid>')
 def scanTag(auuid):
   return redirect('zxing://scan/?ret=https%3A%2F%2F{}%2Fnewasset%2F{}%2F%7BCODE%7D&SCAN_FORMATS=CODE_39'.format(APP_URL, auuid))
 
+
 @app.route('/newasset/<auuid>/<tag>')
 def newAsset(auuid, tag):
-  bucket = None
-  desired_bucket_name = auuid
-  while not bucket:
-    try:
-      bucket = GCS_CLIENT.create_bucket(desired_bucket_name)
-      policy = bucket.get_iam_policy()
-      policy['roles/storage.objectCreator'] = {'allUsers'}
-      bucket.set_iam_policy(policy)
-    except exceptions.Conflict:
-      for b in GCS_CLIENT.list_buckets(project=PROJECT_NAME):
-        if b.name == desired_bucket_name:
-          bucket = b
-      desired_bucket_name = str(uuid.uuid4())
-
-  key = DS_CLIENT.key('sessions', auuid)
-  entity = datastore.Entity(key=key)
-  entity['path'] = 'gs://{}/{}'.format(bucket.name, tag)
+  skey = DS_CLIENT.key('sessions', auuid)
+  entity = datastore.Entity(key=skey)
+  entity['path'] = 'gs://{}/{}'.format(BUCKET_NAME, tag)
   DS_CLIENT.put(entity)
-  
+
   subject = 'Acquisition Underway ({})'.format(tag)
-  content = mail.Content('text/plain', 'Image acquisition for {} has begun.'.format(tag))
-  msg = mail.Mail(SENDER, subject, RECIPIENT, content)
-  response = SG_CLIENT.client.mail.send.post(request_body=msg.get())
-  
+  content = 'Image acquisition for {} has begun.'.format(tag)
+  msg = mail.Mail(SENDER, RECIPIENT, subject, content)
+  SG_CLIENT.send(msg)
   return 'ok'
+
 
 @app.route('/path/<auuid>')
 def getPath(auuid):
-  key = DS_CLIENT.key('sessions', auuid)
-  entity = DS_CLIENT.get(key)
+  skey = DS_CLIENT.key('sessions', auuid)
+  entity = DS_CLIENT.get(skey)
   return entity['path']
+
 
 @app.route('/finish/<auuid>')
 def finish(auuid):
-  key = DS_CLIENT.key('sessions', auuid)
-  entity = DS_CLIENT.get(key)
-  src_bucket_name = entity['path'].split('/')[2]
+  skey = DS_CLIENT.key('sessions', auuid)
+  entity = DS_CLIENT.get(skey)
   asset = entity['path'].split('/')[3]
+  DS_CLIENT.delete(skey)
 
-  src_bucket = GCS_CLIENT.get_bucket(src_bucket_name)
-  dst_bucket = GCS_CLIENT.get_bucket(BUCKET_NAME)
-  blobs = src_bucket.list_blobs()
-
-  for blob in blobs:
-    new_blob = storage.Blob(blob.name, dst_bucket)
-
-    token = None
-    while True:
-      token, _, _ = new_blob.rewrite(blob, token=token)
-      if token is None:
-        break
-
-  src_bucket.delete(force=True)
-  DS_CLIENT.delete(key)
-  
   subject = 'Acquisition Complete ({})'.format(asset)
-  content = mail.Content('text/plain', 'Image acquisition complete: gs://{}/{}'.format(BUCKET_NAME, asset))
-  msg = mail.Mail(SENDER, subject, RECIPIENT, content)
-  SG_CLIENT.client.mail.send.post(request_body=msg.get())
-
+  content = 'Image acquisition complete: gs://{}/{}'.format(
+          BUCKET_NAME, asset)
+  msg = mail.Mail(SENDER, RECIPIENT, subject, content)
+  SG_CLIENT.send(msg)
   return 'ok'
 
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=8080, debug=True)
+
